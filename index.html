@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WebSocket Chat</title>
+</head>
+<body>
+  <div id="chat">
+    <div id="messageWindow"></div>
+    <input type="text" id="messageInput" placeholder="Введите сообщение">
+    <button onclick="sendMessage()">Отправить</button>
+    <button onclick="sendLocation()">Отправить геолокацию</button>
+  </div>
+
+  <script>
+    const chatWindow = document.getElementById('messageWindow');
+    const messageInput = document.getElementById('messageInput');
+
+    const socket = new WebSocket('wss://echo-ws-service.herokuapp.com');
+
+    // Функция для отправки сообщения
+    function sendMessage() {
+      const message = messageInput.value;
+      if (message.trim() !== '') {
+        socket.send(message);
+        displayMessage('Вы: ' + message);
+        messageInput.value = '';
+      }
+    }
+
+    // Функция для отображения сообщения
+    function displayMessage(message) {
+      const messageElement = document.createElement('div');
+      messageElement.textContent = message;
+      chatWindow.appendChild(messageElement);
+    }
+
+    // Функция для отправки геолокации
+    function sendLocation() {
+      if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            const locationMessage = `Моя геолокация: Широта: ${latitude}, Долгота: ${longitude}`;
+            socket.send(locationMessage);
+            displayMessage('Вы: ' + locationMessage);
+          },
+          (error) => {
+            console.log(error);
+            alert('Не удалось получить геолокацию');
+          }
+        );
+      } else {
+        alert('Геолокация не поддерживается вашим браузером');
+      }
+    }
+
+    // Обработчик входящего сообщения
+    socket.onmessage = function(event) {
+      const message = event.data;
+      displayMessage('Эхо-сервер: ' + message);
+    };
+  </script>
+</body>
+</html>
